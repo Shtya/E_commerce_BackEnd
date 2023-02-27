@@ -15,7 +15,7 @@ connectiondb()
 
 
 // 
-pp.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
+app.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
   try {
@@ -26,6 +26,7 @@ pp.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
   // Handle the event
   if (event.type === "checkout.session.completed") {
     console.log(`Create Order here on : ${event.type}`);
+    console.log(event.data.object.client_reference);
   }
 
   // Return a 200 res to acknowledge receipt of the event
