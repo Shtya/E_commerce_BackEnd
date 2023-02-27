@@ -15,7 +15,7 @@ connectiondb()
 
 
 // 
-pp.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
+app.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
   try {
