@@ -2,6 +2,7 @@ const M_order = require("../model/M_order")
 const M_cart = require("../model/M_cart")
 const M_product = require("../model/M_Product")
 const AsyncHandler = require("express-async-handler")
+const M_User = require("../model/M_User")
 const stripe = require("stripe")('sk_test_51MegNnIlxFD1sVSUAMhZkes39gzB51hDstqwOnMiZylSOdsG9vFj1vebmFoRLu4AL0dRaZ9aDPZx5bbnpZHYTdWB00xfYzPV7v')
 
 
@@ -105,4 +106,53 @@ exports.checkOutSession = AsyncHandler(async (req, res, next) => {
     metadata:req.body.shippingAddress
   })
   res.status(200).json({status:"success" , session})
+})
+
+
+// Check Payed
+const createCartOrder = async (session) => {
+  const cartId = session.client_reference_id
+  const shippingAddress = session.metadata
+  const totalOrderPrice = session.display_items[0].amount / 100;
+  const cart = await M_cart.findById(cartId)
+  const user = await M_User.findOne({ email: session.customer_email })
+  
+  const order = await M_order.create({
+    user: user._id,
+    cartItems: cart.cartItems,
+    shippingAddress,
+    totalOrderPrice,
+    isPaid: true,
+    paidAt: Date.now(),
+    paymentmethodType: "card"
+  })
+
+  if (order) {
+    const bulkOption = cart.cartItems.map(item => ({
+      updateOne: {
+        filter: { _id: item.product },
+        update: { $inc: { quantity: -item.quantity, sold: +item.quantity } }
+      }
+    }))
+    await M_product.bulkWrite(bulkOption, {})
+    await M_cart.findByIdAndDelete(cartId)
+
+  }
+}
+
+exports. webhookCheckout = AsyncHandler((req, res , next) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, "whsec_IJE3T0jShmSuaI1bfLVdxTfHk4kWh4JV");// EndPoint Secret Key
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+  // Handle the event
+  if (event.type === "checkout.session.completed") {
+    createCartOrder(event.data.object)
+  }
+
+  // Return a 200 res to acknowledge receipt of the event
+  res.status(201).json({reseved : true});
 })
