@@ -14,6 +14,27 @@ connectiondb()
 
 
 
+// 
+pp.post('/webhook', express.raw({type: 'application/json'}), (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, "whsec_IJE3T0jShmSuaI1bfLVdxTfHk4kWh4JV");// EndPoint Secret Key
+  } catch (err) {
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+  // Handle the event
+  if (event.type === "checkout.session.completed") {
+    console.log(`Create Order here on : ${event.type}`);
+  }
+
+  // Return a 200 res to acknowledge receipt of the event
+  res.send();
+});
+
+
+
+
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 app.use(cors())
