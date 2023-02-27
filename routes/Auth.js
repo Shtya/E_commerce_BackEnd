@@ -8,7 +8,7 @@ router.post("/signup"           , V_Create , signUp)
 router.post("/login"            , V_login , login)
 router.post("/forgotPasswords"  , ForgetPass)
 router.post("/verifyResetCode"  , verifyPass)
-router.put("/resetPassword"  , resetPassword)
+router.put("/resetPassword"     , resetPassword)
 
 
 module.exports = router
